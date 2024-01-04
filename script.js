@@ -45,7 +45,7 @@ async function getCurrWeatherDetails(searchQuery) {
 
     const tempRangeObject = await getDailyWeatherDetails(); 
 
-    console.log(currWeatherData);
+    // console.log(currWeatherData);
 
     const weatherDetails = {
         cityName: currWeatherData.name.toUpperCase(),
@@ -55,11 +55,15 @@ async function getCurrWeatherDetails(searchQuery) {
         tempMin: parseInt(tempRangeObject.list[0].main.temp_min),
         tempMax: parseInt(tempRangeObject.list[0].main.temp_max),
 
+        feelsLikeTemp: parseInt(currWeatherData.main.feels_like),
+        humidity: parseInt(currWeatherData.main.humidity),
+
         description: currWeatherData.weather[0].main,
         detailedDescription: currWeatherData.weather[0].description,
 
         iconUrl: `https://openweathermap.org/img/wn/${currWeatherData.weather[0].icon}@2x.png`
     }
+    console.log(weatherDetails);
 
     return weatherDetails;
 
@@ -123,7 +127,7 @@ searchForm.addEventListener('submit', async (event)=> {
 
 
     if (existingCard) {
-        focusExistingCard(existingCard.cardElement);
+        focusCard(existingCard.cardElement);
     }
     else {
 
@@ -143,8 +147,12 @@ searchForm.addEventListener('submit', async (event)=> {
             updateCitiesArray(cardObject);
 
             renderCardsFromArray();
+            
+            focusCard(newWeatherCard);
         }
     }
+
+    searchForm.reset();
 })
 
 function insertNewCardContainer() {
@@ -165,7 +173,9 @@ function createNewWeatherCard(weatherObject) {
     
                     <div class="top-row">
                         <div class="main-temp-container">
-                            <span class="curr-temp-value">${weatherObject.currTemp}</span>&deg
+                            <div class="curr-temp"><span class="curr-temp-value">${weatherObject.currTemp}</span>&deg</div>
+                            <div class="feels-like-temp">Feels like: <span class="feels-like-temp-value">${weatherObject.feelsLikeTemp}</span><span>&deg</span></div>
+                            <div class="humidity">Humidity: <span class="humidity-value">${weatherObject.humidity}</span><span style="font-size: var(--subtext)"</span>%</div>
                         </div>
                         <div class="weather-icon-container">
                             <img src="${weatherObject.iconUrl}" alt="">
@@ -187,7 +197,7 @@ function createNewWeatherCard(weatherObject) {
     return weatherCard;                
 }
 
-function focusExistingCard(cardElement) {
+function focusCard(cardElement) {
     cardElement.scrollIntoView();
     cardElement.classList.add('highlighted');
 

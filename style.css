@@ -78,6 +78,8 @@ header {
     font-size: var(--heading-text);
     padding-block: 14px;
     font-weight: 500;
+
+    text-align: center;
 }
 
 .search-form-container {
@@ -176,7 +178,7 @@ header {
 }
     .weather-card-outer-container {
         flex-basis: 30%;
-        min-width: 345px;
+        min-width: 400px;
 
         height: auto;
         aspect-ratio: 350/190;
@@ -192,7 +194,7 @@ header {
         .weather-card {
             width: 100%; height: 100%;
 
-            padding: 8px;
+            padding: 8px 12px;
 
             background-image: url('./card-background.svg');
             background-repeat: no-repeat;
@@ -214,12 +216,26 @@ header {
             }
                 .main-temp-container {
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    flex-direction: column;
+                    /* align-items: center; */
+                    /* justify-content: center; */
 
                     font-size: 62px;
                     font-weight: 100;
                 }
+                    .curr-temp-value {
+                        font-size: 62px;
+                        font-weight: 100;
+                    }
+                    .feels-like-temp ,.humidity {
+                        font-size: var(--subtext);
+                        color: var(--text-gray);
+
+                        >span {
+                            font-size: var(--large-text);
+                            color: var(--text-white);
+                        }
+                    }
                 .weather-icon-container {
                     width: 100px;
                     min-width: 70px;
@@ -257,10 +273,12 @@ header {
                     }
                     .detailed-description {
                         text-wrap: nowrap;
+                        font-size: var(--normal-text);
                     }
 
                 .bottom-right {
                     align-items: end;
+                    padding-right: 10px;
                 }
 
 
@@ -293,6 +311,6 @@ header {
 
 @media screen and (min-width: 720px) {
     .weather-cards-display-section {
-        justify-content: space-between;
+        justify-content: start;
     }
 }
