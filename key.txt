@@ -1,8 +1,0 @@
-d202b03c2952f4d83f77ff52f618dc9d
-
-// 5 DAY TO GET MIN MAX
-api.openweathermap.org/data/2.5/forecast?q={city name}&cnt=1&appid=d202b03c2952f4d83f77ff52f618dc9d
-
-
-// ICON
-https://openweathermap.org/img/wn/{icon_code}@2x.png
