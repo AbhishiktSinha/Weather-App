@@ -6,13 +6,14 @@ async function getISOCodes() {
     ISO_Country_Codes = await response.json();
 }
 
-function getCountry(countyrCode) {
-    return ISO_Country_Codes[countyrCode.toUpperCase()];
+function getCountry(countryCode) {
+    return ISO_Country_Codes[countryCode.toUpperCase()];
 }
 
 
 
 const api_key = 'd202b03c2952f4d83f77ff52f618dc9d';
+const baseURL = `https://api.openweathermap.org/data/2.5`;
 
 const searchedCitiesArr = [
     // {
@@ -22,9 +23,65 @@ const searchedCitiesArr = [
     // }
 ]
 
-async function getCurrWeatherDetails(searchQuery) {
+function getDeviceLocationWeather() {
+    let locationDetails, error;
+    
+    try {
 
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${searchQuery}&units=metric&appid=${api_key}`;
+        navigator.geolocation.getCurrentPosition((position)=>{
+            locationDetails = {lat: position.coords.latitude, lon: position.coords.longitude};        
+            console.log(locationDetails);
+
+            getCurrWeatherDetails(null, locationDetails).
+                then((weatherDetails) => {
+
+                    if (weatherDetails) {
+                        insertNewCardContainer();
+
+                        const newWeatherCard = createNewWeatherCard(weatherDetails);
+                        const cardObject = {
+                            cityName: weatherDetails.cityName,
+                            currTemp: weatherDetails.currTemp,
+                            cardElement: newWeatherCard
+                        };
+
+                        updateCitiesArray(cardObject);
+
+                        renderCardsFromArray();
+
+                        focusCard(newWeatherCard);
+                    }
+                    else {
+                        throw new Error('whoops in getting weatherDetails');
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                })
+            
+
+        }, (error)=>{
+            console.log(error);
+        });
+
+    }
+    catch (error) {
+        console.log(error);
+    }
+
+}
+
+async function getCurrWeatherDetails(searchQuery, position) {
+
+    let url;
+
+    if (position) {
+        const {lat, lon} = position;
+        url = `${baseURL}/weather?lat=${lat}&lon=${lon}&units=metric&appid=${api_key}`;
+    }
+    else {
+        url = `${baseURL}/weather?q=${searchQuery}&units=metric&appid=${api_key}`;
+    }
 
     let responseObject, currWeatherData;
 
@@ -68,7 +125,15 @@ async function getCurrWeatherDetails(searchQuery) {
     return weatherDetails;
 
     async function getDailyWeatherDetails() {
-        const url = `https://api.openweathermap.org/data/2.5/forecast?q=${searchQuery}&cnt=1&units=metric&appid=${api_key}`;
+        let url;
+        if (position) {
+            const {lat, lon} = position;
+            url = `${baseURL}/forecast?lat=${lat}&lon=${lon}&cnt=1&units=metric&appid=${api_key}`
+        }
+        else {
+            url = `${baseURL}/forecast?q=${searchQuery}&cnt=1&units=metric&appid=${api_key}`;
+        }
+
 
         const responseObj = await fetch(url);
 
@@ -167,29 +232,31 @@ function createNewWeatherCard(weatherObject) {
     const weatherCard = document.createElement('div');
     weatherCard.classList.add('weather-card');
 
-    const cityName = weatherObject.cityName.charAt(0).toUpperCase() + weatherObject.cityName.slice(1).toLowerCase();
+    let { cityName, currTemp, feelsLikeTemp, humidity, iconUrl, tempMax, tempMin, countryName, description, detailedDescription} = weatherObject;
+
+    cityName = cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase();
 
     weatherCard.innerHTML = `
     
                     <div class="top-row">
                         <div class="main-temp-container">
-                            <div class="curr-temp"><span class="curr-temp-value">${weatherObject.currTemp}</span>&deg</div>
-                            <div class="feels-like-temp">Feels like: <span class="feels-like-temp-value">${weatherObject.feelsLikeTemp}</span><span>&deg</span></div>
-                            <div class="humidity">Humidity: <span class="humidity-value">${weatherObject.humidity}</span><span style="font-size: var(--subtext)"</span>%</div>
+                            <div class="curr-temp"><span class="curr-temp-value">${currTemp}</span>&deg</div>
+                            <div class="feels-like-temp">Feels like: <span class="feels-like-temp-value">${feelsLikeTemp}</span><span>&deg</span></div>
+                            <div class="humidity">Humidity: <span class="humidity-value">${humidity}</span><span style="font-size: var(--subtext)"</span>%</div>
                         </div>
                         <div class="weather-icon-container">
-                            <img src="${weatherObject.iconUrl}" alt="">
+                            <img src="${iconUrl}" alt="">
                         </div>
                     </div>
 
                     <div class="bottom-row">
                         <div class="bottom-left">
-                            <div class="temp-range-container">H:${weatherObject.tempMax}&deg<span class="temp-max"></span> L:${weatherObject.tempMin}&deg<span class="temp-min"></span></div>
-                            <div class="location-container"><span class="city-name">${cityName}</span>, <span class="country-name">${weatherObject.countryName}</span></div>
+                            <div class="temp-range-container">H:${tempMax}&deg<span class="temp-max"></span> L:${tempMin}&deg<span class="temp-min"></span></div>
+                            <div class="location-container"><span class="city-name">${cityName}</span>, <span class="country-name">${countryName}</span></div>
                         </div>
                         <div class="bottom-right">
-                            <div class="main-description">${weatherObject.description}</div>
-                            <div class="detailed-description">${weatherObject.detailedDescription}</div>
+                            <div class="main-description">${description}</div>
+                            <div class="detailed-description">${detailedDescription}</div>
                         </div>
                     </div>
                 `;
@@ -209,14 +276,17 @@ function focusCard(cardElement) {
 }
 
 function renderCardsFromArray() {
-    const containersList = document.querySelectorAll('.weather-card-outer-container');
+    const containersList = document.getElementsByClassName('weather-card-outer-container');
 
     for (let index = 0; index < containersList.length; index++) {
         
         const container = containersList[index];
         const card = searchedCitiesArr[index].cardElement;
-
+        
+        // FROM MDN: If the given child is a reference to an existing node in the document, 
+        // appendChild() moves it from its current position to the new position.
         container.appendChild(card);
+
     }
 }
 
