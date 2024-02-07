@@ -15,7 +15,7 @@ function getCountry(countryCode) {
 const api_key = 'd202b03c2952f4d83f77ff52f618dc9d';
 const baseURL = `https://api.openweathermap.org/data/2.5`;
 
-const searchedCitiesArr = [
+let searchedCitiesArr = [
     // {
     //     cityName: 'GHAZIABAD',
     //     currTemp: '17',
@@ -23,42 +23,20 @@ const searchedCitiesArr = [
     // }
 ]
 
+getDeviceLocationWeather();
+
+
 function getDeviceLocationWeather() {
-    let locationDetails, error;
+    let deviceLocation, error;
     
     try {
 
         navigator.geolocation.getCurrentPosition((position)=>{
-            locationDetails = {lat: position.coords.latitude, lon: position.coords.longitude};        
-            console.log(locationDetails);
-
-            getCurrWeatherDetails(null, locationDetails).
-                then((weatherDetails) => {
-
-                    if (weatherDetails) {
-                        insertNewCardContainer();
-
-                        const newWeatherCard = createNewWeatherCard(weatherDetails);
-                        const cardObject = {
-                            cityName: weatherDetails.cityName,
-                            currTemp: weatherDetails.currTemp,
-                            cardElement: newWeatherCard
-                        };
-
-                        updateCitiesArray(cardObject);
-
-                        renderCardsFromArray();
-
-                        focusCard(newWeatherCard);
-                    }
-                    else {
-                        throw new Error('whoops in getting weatherDetails');
-                    }
-                })
-                .catch((error) => {
-                    console.log(error);
-                })
+            deviceLocation = {lat: position.coords.latitude, lon: position.coords.longitude};        
+            console.log(deviceLocation);
+            localStorage.setItem("deviceLocation", JSON.stringify(deviceLocation));
             
+            addNewWeatherCity(null, deviceLocation);
 
         }, (error)=>{
             console.log(error);
@@ -69,6 +47,36 @@ function getDeviceLocationWeather() {
         console.log(error);
     }
 
+}
+
+function addNewWeatherCity(query, deviceLocation) {
+
+    getCurrWeatherDetails(query, deviceLocation).
+        then((weatherDetails) => {
+
+            if (weatherDetails) {
+                insertNewCardContainer();
+
+                const newWeatherCard = createNewWeatherCard(weatherDetails);
+                const cardObject = {
+                    cityName: weatherDetails.cityName,
+                    currTemp: weatherDetails.currTemp,
+                    cardElement: newWeatherCard
+                };
+
+                updateCitiesArray(cardObject);
+
+                renderCardsFromArray();
+
+                focusCard(newWeatherCard);
+            }
+            else {
+                throw new Error('whoops in getting weatherDetails');
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+        })
 }
 
 async function getCurrWeatherDetails(searchQuery, position) {
@@ -196,25 +204,7 @@ searchForm.addEventListener('submit', async (event)=> {
     }
     else {
 
-        const weatherDetails = await getCurrWeatherDetails(searchQuery);
-
-        // assuming no error in the awaited method
-        if (weatherDetails) {
-            insertNewCardContainer();
-
-            const newWeatherCard = createNewWeatherCard(weatherDetails);
-            const cardObject = {
-                cityName: weatherDetails.cityName,
-                currTemp: weatherDetails.currTemp,
-                cardElement: newWeatherCard
-            };
-
-            updateCitiesArray(cardObject);
-
-            renderCardsFromArray();
-            
-            focusCard(newWeatherCard);
-        }
+        addNewWeatherCity(searchQuery);
     }
 
     searchForm.reset();
@@ -227,6 +217,28 @@ function insertNewCardContainer() {
     cardsDisplaySection.appendChild(cardContainer);
 }
 
+function handleDelete(cityName) {
+    console.log('trying to delete');
+
+    let deletedCityObj;
+
+    searchedCitiesArr = searchedCitiesArr.filter((item)=>{
+        if (item.cityName === cityName.toUpperCase()) {
+            deletedCityObj = item;
+        }
+        return (item.cityName !== cityName.toUpperCase());
+    });
+
+    console.log(deletedCityObj);
+    
+    // we have the reference of the targeted card, we can just remove it from the DOM
+    // since removing from a sorted array does not disturb the sorting
+
+    deletedCityObj.cardElement.classList.add('delete-card');
+    setTimeout(()=>{
+        deletedCityObj.cardElement.parentElement.remove();
+    }, 400);
+}
 function createNewWeatherCard(weatherObject) {
     
     const weatherCard = document.createElement('div');
@@ -236,8 +248,12 @@ function createNewWeatherCard(weatherObject) {
 
     cityName = cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase();
 
+    function handleClick() {
+        handleDelete(cityName);
+    }
     weatherCard.innerHTML = `
-    
+    <button class="delete-card-btn hide material-symbols-outlined" data-city="${cityName}" onClick="handleDelete('${cityName}')">X</button>
+
                     <div class="top-row">
                         <div class="main-temp-container">
                             <div class="curr-temp"><span class="curr-temp-value">${currTemp}</span>&deg</div>
@@ -276,19 +292,27 @@ function focusCard(cardElement) {
 }
 
 function renderCardsFromArray() {
-    const containersList = document.getElementsByClassName('weather-card-outer-container');
+    const containersList = document.querySelectorAll('.weather-card-outer-container');
+    console.log(containersList);
+    console.log
 
-    for (let index = 0; index < containersList.length; index++) {
+    let index = 0;
+    for (index = 0; index < searchedCitiesArr.length; index++) {
         
+        if (index >= containersList.length) {
+            insertNewCardContainer();            
+        }
         const container = containersList[index];
         const card = searchedCitiesArr[index].cardElement;
         
         // FROM MDN: If the given child is a reference to an existing node in the document, 
         // appendChild() moves it from its current position to the new position.
         container.appendChild(card);
-
     }
+
+
 }
+
 
 function updateCitiesArray(cardObject) {
     if (cardObject) {
